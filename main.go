@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/hex"
 	"flag"
 	"fmt"
 	"log"
@@ -17,7 +18,8 @@ func read(portPtr *serial.Port) {
 	port := *portPtr
 
 	for {
-		msg := make([]byte, 256)
+		msg := make([]byte, 0)
+		read := 0
 
 		for {
 			buff := make([]byte, 1)
@@ -33,9 +35,26 @@ func read(portPtr *serial.Port) {
 			}
 
 			msg = append(msg, buff...)
+			read += 1
 		}
 
-		fmt.Println(string(msg))
+		// fmt.Println(hex.EncodeToString(msg))
+
+		raw, err := hex.DecodeString(string(msg))
+
+		if err != nil {
+			fmt.Println(err)
+			continue
+		}
+
+		packet, err := Unmarshal(raw)
+
+		if err != nil {
+			fmt.Println(err)
+			continue
+		}
+
+		fmt.Println(packet.Content)
 	}
 }
 
@@ -44,17 +63,17 @@ func main() {
 	flag.Parse()
 
 	if len(*device) == 0 {
-		log.Fatal("No serial device was selected")
+		log.Fatalln("No serial device was selected")
 	}
 
 	ports, err := serial.GetPortsList()
 
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalln(err)
 	}
 
 	if len(ports) == 0 {
-		log.Fatal("No serial ports found")
+		log.Fatalln("No serial ports found")
 	}
 
 	found := false
@@ -80,7 +99,17 @@ func main() {
 		log.Fatal(err)
 	}
 
-	msg := []byte("Test message")
+	packet := &Packet{Content: "Test message"}
+	hexMsg, err := packet.MarshalToHex()
+	fmt.Println(hexMsg)
+	msg := []byte(hexMsg)
+
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	// msg := []byte("Test message")
+	// msg = append(msg, 0)
 	msg = append(msg, 0)
 	port.Write(msg)
 
