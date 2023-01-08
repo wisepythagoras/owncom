@@ -17,19 +17,25 @@ func read(portPtr *serial.Port) {
 	port := *portPtr
 
 	for {
-		buff := make([]byte, 256)
-		n, err := port.Read(buff)
+		msg := make([]byte, 256)
 
-		if err != nil {
-			fmt.Println("Read Error:", err)
-			continue
+		for {
+			buff := make([]byte, 1)
+			n, err := port.Read(buff)
+
+			if err != nil {
+				fmt.Println("Read Error:", err)
+				continue
+			}
+
+			if n == 0 || buff[0] == 0 {
+				break
+			}
+
+			msg = append(msg, buff...)
 		}
 
-		fmt.Println(n, string(buff))
-
-		if n == 0 {
-			fmt.Println("EOF")
-		}
+		fmt.Println(string(msg))
 	}
 }
 
