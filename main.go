@@ -100,19 +100,8 @@ func main() {
 		log.Fatal(err)
 	}
 
-	packet := &core.Packet{Content: "Test message"}
-	hexMsg, err := packet.MarshalToHex()
-	fmt.Println(hexMsg)
-	msg := []byte(hexMsg)
-
-	if err != nil {
-		log.Fatalln(err)
-	}
-
-	// msg := []byte("Test message")
-	// msg = append(msg, 0)
-	msg = append(msg, 0)
-	port.Write(msg)
+	handler := core.Handler{Port: port}
+	handler.Send("Test message")
 
 	wg = new(sync.WaitGroup)
 	wg.Add(1)
