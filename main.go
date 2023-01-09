@@ -7,6 +7,7 @@ import (
 	"log"
 	"sync"
 
+	"github.com/wisepythagoras/owncom/core"
 	"go.bug.st/serial"
 )
 
@@ -47,7 +48,7 @@ func read(portPtr *serial.Port) {
 			continue
 		}
 
-		packet, err := Unmarshal(raw)
+		packet, err := core.UnmarshalPacket(raw)
 
 		if err != nil {
 			fmt.Println(err)
@@ -99,7 +100,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	packet := &Packet{Content: "Test message"}
+	packet := &core.Packet{Content: "Test message"}
 	hexMsg, err := packet.MarshalToHex()
 	fmt.Println(hexMsg)
 	msg := []byte(hexMsg)

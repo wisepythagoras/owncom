@@ -1,4 +1,4 @@
-package main
+package core
 
 import (
 	"bytes"
@@ -38,7 +38,7 @@ func (p *Packet) MarshalToHex() (string, error) {
 	return hex.EncodeToString(buff), nil
 }
 
-func Unmarshal(b []byte) (*Packet, error) {
+func UnmarshalPacket(b []byte) (*Packet, error) {
 	var buff bytes.Buffer
 	var err error
 	inBuff := bytes.NewBuffer(b)
