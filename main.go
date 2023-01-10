@@ -91,22 +91,18 @@ func main() {
 		log.Fatalf("No such serial device: %q\n", *device)
 	}
 
-	mode := &serial.Mode{
-		BaudRate: 9600,
-	}
-	port, err := serial.Open(*device, mode)
+	handler := core.Handler{}
 
-	if err != nil {
+	if err = handler.ConnectToSerial(*device); err != nil {
 		log.Fatal(err)
 	}
 
-	handler := core.Handler{Port: port}
 	handler.Send("Test message")
 
 	wg = new(sync.WaitGroup)
 	wg.Add(1)
 
-	go read(&port)
+	go read(&handler.Port)
 
 	wg.Wait()
 }
