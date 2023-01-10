@@ -27,7 +27,7 @@ func (h *Handler) ConnectToSerial(device string) error {
 	return err
 }
 
-func (h *Handler) Send(msg string) error {
+func (h *Handler) Send(msg []byte) error {
 	packet := &Packet{Content: msg}
 	hexMsg, err := packet.MarshalToHex()
 	msgBytes := []byte(hexMsg)

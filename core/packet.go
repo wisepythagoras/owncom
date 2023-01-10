@@ -10,7 +10,7 @@ import (
 )
 
 type Packet struct {
-	Content  string `msgpack:"d"`
+	Content  []byte `msgpack:"d"`
 	Checksum uint16 `msgpack:"c"`
 }
 

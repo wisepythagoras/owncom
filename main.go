@@ -7,6 +7,7 @@ import (
 	"sync"
 
 	"github.com/wisepythagoras/owncom/core"
+	"github.com/wisepythagoras/owncom/crypto"
 	"go.bug.st/serial"
 )
 
@@ -51,7 +52,15 @@ func main() {
 		log.Fatal(err)
 	}
 
-	handler.Send("Test message")
+	// Encrypto message.
+	key, _ := crypto.PBKDF2Key([]byte("test key"))
+	ciphertext, err := crypto.EncryptGCM([]byte("Test message"), key)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	handler.Send(ciphertext)
 
 	wg = new(sync.WaitGroup)
 	wg.Add(1)
@@ -66,7 +75,9 @@ func main() {
 				continue
 			}
 
-			fmt.Println(p.Content, p.Checksum)
+			key, _ := crypto.PBKDF2Key([]byte("test key"))
+			plaintext, err := crypto.DecryptGCM(p.Content, key)
+			fmt.Println(plaintext, p.Checksum, err)
 		}
 	}(handler.MsgChan)
 
