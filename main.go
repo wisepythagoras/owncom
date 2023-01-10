@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/hex"
 	"flag"
 	"fmt"
 	"log"
@@ -12,52 +11,6 @@ import (
 )
 
 var wg *sync.WaitGroup
-
-func read(portPtr *serial.Port) {
-	defer wg.Done()
-
-	port := *portPtr
-
-	for {
-		msg := make([]byte, 0)
-		read := 0
-
-		for {
-			buff := make([]byte, 1)
-			n, err := port.Read(buff)
-
-			if err != nil {
-				fmt.Println("Read Error:", err)
-				continue
-			}
-
-			if n == 0 || buff[0] == 0 {
-				break
-			}
-
-			msg = append(msg, buff...)
-			read += 1
-		}
-
-		// fmt.Println(hex.EncodeToString(msg))
-
-		raw, err := hex.DecodeString(string(msg))
-
-		if err != nil {
-			fmt.Println(err)
-			continue
-		}
-
-		packet, err := core.UnmarshalPacket(raw)
-
-		if err != nil {
-			fmt.Println(err)
-			continue
-		}
-
-		fmt.Println(packet.Content)
-	}
-}
 
 func main() {
 	device := flag.String("device", "", "The serial device to open")
@@ -91,7 +44,8 @@ func main() {
 		log.Fatalf("No such serial device: %q\n", *device)
 	}
 
-	handler := core.Handler{}
+	msgChan := make(chan *core.Packet)
+	handler := core.Handler{WG: wg, MsgChan: msgChan}
 
 	if err = handler.ConnectToSerial(*device); err != nil {
 		log.Fatal(err)
@@ -102,7 +56,19 @@ func main() {
 	wg = new(sync.WaitGroup)
 	wg.Add(1)
 
-	go read(&handler.Port)
+	go handler.Listen()
+	go func(msgChan chan *core.Packet) {
+		for {
+			p, ok := <-msgChan
+
+			if !ok {
+				fmt.Println("Error reading from chan")
+				continue
+			}
+
+			fmt.Println(p.Content, p.Checksum)
+		}
+	}(handler.MsgChan)
 
 	wg.Wait()
 }
