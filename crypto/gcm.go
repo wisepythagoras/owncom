@@ -11,14 +11,19 @@ import (
 	"golang.org/x/crypto/sha3"
 )
 
-// PBKDF2Key transforms a key into a 32 bit key.
-func PBKDF2Key(key []byte) ([]byte, error) {
-	salt := make([]byte, 32)
+// CreateSalt will generate a random salt.
+func CreateSalt(size int) ([]byte, error) {
+	salt := make([]byte, size)
 
 	if _, err := rand.Read(salt); err != nil {
 		return nil, err
 	}
 
+	return salt, nil
+}
+
+// PBKDF2Key transforms a key into a 32 bit key.
+func PBKDF2Key(key []byte, salt []byte) ([]byte, error) {
 	return pbkdf2.Key(key, salt, 4096, 32, sha3.New384), nil
 }
 

@@ -52,8 +52,10 @@ func main() {
 		log.Fatal(err)
 	}
 
-	// Encrypto message.
-	key, _ := crypto.PBKDF2Key([]byte("test key"))
+	// Encrypt message.
+	// salt, _ := crypto.CreateSalt(32)
+	salt := []byte{74, 112, 125, 227, 245, 226, 113, 225, 219, 162, 165, 100, 52, 233, 89, 50, 77, 215, 48, 155, 219, 131, 51, 192, 130, 124, 191, 199, 240, 179, 175, 43}
+	key, _ := crypto.PBKDF2Key([]byte("test key"), salt)
 	ciphertext, err := crypto.EncryptGCM([]byte("Test message"), key)
 
 	if err != nil {
@@ -75,7 +77,7 @@ func main() {
 				continue
 			}
 
-			key, _ := crypto.PBKDF2Key([]byte("test key"))
+			key, _ := crypto.PBKDF2Key([]byte("test key"), salt)
 			plaintext, err := crypto.DecryptGCM(p.Content, key)
 			fmt.Println(plaintext, p.Checksum, err)
 		}
