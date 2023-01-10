@@ -5,19 +5,30 @@ import (
 	"compress/gzip"
 	"encoding/hex"
 	"io"
+
+	"github.com/vmihailenco/msgpack"
 )
 
 type Packet struct {
-	Content string
+	Content  string `msgpack:"d"`
+	Checksum uint16 `msgpack:"c"`
 }
 
 func (p *Packet) Marshal() ([]byte, error) {
+	p.Checksum = p.GetChecksum()
+
 	var buff bytes.Buffer
 	var err error
 
+	raw, err := msgpack.Marshal(p)
+
+	if err != nil {
+		return nil, err
+	}
+
 	writer := gzip.NewWriter(&buff)
 
-	if _, err = writer.Write([]byte(p.Content)); err != nil {
+	if _, err = writer.Write(raw); err != nil {
 		return nil, err
 	}
 
@@ -36,6 +47,10 @@ func (p *Packet) MarshalToHex() (string, error) {
 	}
 
 	return hex.EncodeToString(buff), nil
+}
+
+func (p *Packet) GetChecksum() uint16 {
+	return bytesChecksum([]byte(p.Content))
 }
 
 func UnmarshalPacket(b []byte) (*Packet, error) {
@@ -57,7 +72,11 @@ func UnmarshalPacket(b []byte) (*Packet, error) {
 		return nil, err
 	}
 
-	packet := &Packet{Content: buff.String()}
+	packet := new(Packet)
+
+	if err := msgpack.Unmarshal(buff.Bytes(), &packet); err != nil {
+		return nil, err
+	}
 
 	return packet, nil
 }
