@@ -50,7 +50,7 @@ func (p *Packet) MarshalToHex() (string, error) {
 }
 
 func (p *Packet) GetChecksum() uint16 {
-	return bytesChecksum([]byte(p.Content))
+	return bytesChecksum(p.Content)
 }
 
 func UnmarshalPacket(b []byte) (*Packet, error) {
