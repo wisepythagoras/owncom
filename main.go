@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/hex"
 	"flag"
 	"fmt"
 	"log"
@@ -54,9 +55,9 @@ func main() {
 
 	// Encrypt message. Normally it would be called as follows:
 	// salt, _ := crypto.CreateSalt(32)
-	salt := []byte{74, 112, 125, 227, 245, 226, 113, 225, 219, 162, 165, 100, 52, 233, 89, 50, 77, 215, 48, 155, 219, 131, 51, 192, 130, 124, 191, 199, 240, 179, 175, 43}
-	key, _ := crypto.PBKDF2Key([]byte("test key"), salt)
-	ciphertext, err := crypto.EncryptGCM([]byte("Test message"), key)
+	salt, _ := hex.DecodeString("4a707de3f5e271e1dba2a56434e959324dd7309bdb8333c0827cbfc7f0b3af2b")
+	msg := core.Message{Msg: []byte("Test message")}
+	ciphertext, err := msg.MarshalAESEncrypted([]byte("test key"), salt)
 
 	if err != nil {
 		log.Fatal(err)
