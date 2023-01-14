@@ -57,13 +57,13 @@ func main() {
 	// salt, _ := crypto.CreateSalt(32)
 	salt, _ := hex.DecodeString("4a707de3f5e271e1dba2a56434e959324dd7309bdb8333c0827cbfc7f0b3af2b")
 	msg := core.Message{Msg: []byte("Test message")}
-	ciphertext, err := msg.MarshalAESEncrypted([]byte("test key"), salt)
+	packets, err := msg.PacketsAESGCM([]byte("test key"), salt)
 
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	handler.Send(ciphertext)
+	handler.Send(packets)
 
 	wg = new(sync.WaitGroup)
 	wg.Add(1)

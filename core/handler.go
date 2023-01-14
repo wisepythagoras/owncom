@@ -27,17 +27,21 @@ func (h *Handler) ConnectToSerial(device string) error {
 	return err
 }
 
-func (h *Handler) Send(msg []byte) error {
-	packet := &Packet{Content: msg}
-	hexMsg, err := packet.MarshalToHex()
-	msgBytes := []byte(hexMsg)
+func (h *Handler) Send(packets []Packet) error {
+	for _, packet := range packets {
+		var msgHex string
+		var err error
 
-	if err != nil {
-		return err
+		if msgHex, err = packet.MarshalToHex(); err != nil {
+			return err
+		}
+
+		msgBytes := []byte(msgHex)
+		msgBytes = append(msgBytes, 0)
+		if _, err = h.Port.Write(msgBytes); err != nil {
+			return err
+		}
 	}
-
-	msgBytes = append(msgBytes, 0)
-	h.Port.Write(msgBytes)
 
 	return nil
 }
