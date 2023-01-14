@@ -27,10 +27,17 @@ func (m *Message) PacketsAESGCM(key, salt []byte) ([]Packet, error) {
 	numOfPackets := len(ciphertext) / PACKET_SIZE
 	remainderBytes := len(ciphertext) % PACKET_SIZE
 
+	totalPackets := numOfPackets
+
+	if remainderBytes > 0 {
+		totalPackets += 1
+	}
+
 	for i := 0; i < numOfPackets; i++ {
 		packet := Packet{
 			Content: ciphertext[PACKET_SIZE*i : PACKET_SIZE*(i+1)],
 			ID:      uint32(numOfPackets) + 1,
+			Total:   uint32(totalPackets),
 		}
 		packets = append(packets, packet)
 	}
@@ -39,13 +46,10 @@ func (m *Message) PacketsAESGCM(key, salt []byte) ([]Packet, error) {
 		packet := Packet{
 			Content: ciphertext[len(ciphertext)-remainderBytes:],
 			ID:      uint32(numOfPackets) + 1,
+			Total:   uint32(totalPackets),
 		}
 		packets = append(packets, packet)
 	}
 
 	return packets, nil
-}
-
-func UnmarshalAESEncryptedMessage(key, salt []byte) (*Message, error) {
-	return nil, nil
 }

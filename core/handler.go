@@ -38,6 +38,7 @@ func (h *Handler) Send(packets []Packet) error {
 
 		msgBytes := []byte(msgHex)
 		msgBytes = append(msgBytes, 0)
+
 		if _, err = h.Port.Write(msgBytes); err != nil {
 			return err
 		}
