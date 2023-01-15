@@ -111,7 +111,7 @@ func main() {
 					continue
 				}
 
-				fmt.Printf("%s (%d)> %s (%d packets)", p.ID, p.Checksum, string(plaintext), p.Total)
+				fmt.Printf("%s (%d)> %s (%d packets)\n", p.ID, p.Checksum, string(plaintext), p.Total)
 			}
 		}
 	}(handler.MsgChan)
