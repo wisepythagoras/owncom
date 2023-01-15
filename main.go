@@ -102,7 +102,16 @@ func main() {
 
 				key, _ := crypto.PBKDF2Key([]byte("test key"), salt)
 				plaintext, err := crypto.DecryptGCM(data, key)
-				fmt.Println(p.ID, string(plaintext), p.Checksum, err)
+
+				delete(countMap, p.ID)
+				delete(packetMap, p.ID)
+
+				if err != nil {
+					fmt.Println(err)
+					continue
+				}
+
+				fmt.Printf("%s (%d)> %s (%d packets)", p.ID, p.Checksum, string(plaintext), p.Total)
 			}
 		}
 	}(handler.MsgChan)

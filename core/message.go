@@ -2,12 +2,11 @@ package core
 
 import (
 	"encoding/hex"
-	"fmt"
 
 	"github.com/wisepythagoras/owncom/crypto"
 )
 
-const PACKET_SIZE = 100
+const PACKET_SIZE = 50
 
 type Message struct {
 	Msg []byte
@@ -42,7 +41,7 @@ func (m *Message) PacketsAESGCM(key, salt []byte) ([]Packet, error) {
 	if remainderBytes > 0 {
 		totalPackets += 1
 	}
-	fmt.Println(hashHex, hashHex[:10])
+
 	for i := 0; i < numOfPackets; i++ {
 		packet := Packet{
 			Content:   ciphertext[PACKET_SIZE*i : PACKET_SIZE*(i+1)],
