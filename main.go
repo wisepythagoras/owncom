@@ -70,6 +70,9 @@ func main() {
 
 	go handler.Listen()
 	go func(msgChan chan *core.Packet) {
+		countMap := make(map[string]uint32)
+		packetMap := make(map[string][]*core.Packet)
+
 		for {
 			p, ok := <-msgChan
 
@@ -78,9 +81,29 @@ func main() {
 				continue
 			}
 
-			key, _ := crypto.PBKDF2Key([]byte("test key"), salt)
-			plaintext, err := crypto.DecryptGCM(p.Content, key)
-			fmt.Println(string(plaintext), p.Checksum, err)
+			var count uint32
+
+			if count, ok = countMap[p.ID]; !ok {
+				countMap[p.ID] = 0
+				packetMap[p.ID] = make([]*core.Packet, 0)
+				count = 0
+			}
+
+			packetMap[p.ID] = append(packetMap[p.ID], p)
+			countMap[p.ID] += 1
+			count += 1
+
+			if count == p.Total {
+				data := make([]byte, 0)
+
+				for _, packet := range packetMap[p.ID] {
+					data = append(data, packet.Content...)
+				}
+
+				key, _ := crypto.PBKDF2Key([]byte("test key"), salt)
+				plaintext, err := crypto.DecryptGCM(data, key)
+				fmt.Println(p.ID, string(plaintext), p.Checksum, err)
+			}
 		}
 	}(handler.MsgChan)
 

@@ -10,10 +10,11 @@ import (
 )
 
 type Packet struct {
-	Content  []byte `msgpack:"d"`
-	Checksum uint16 `msgpack:"c"`
-	ID       uint32 `msgpack:"i"`
-	Total    uint32 `msgpack:"t"`
+	Content   []byte `msgpack:"d"`
+	Checksum  uint16 `msgpack:"c"`
+	PacketNum uint32 `msgpack:"n"`
+	Total     uint32 `msgpack:"t"`
+	ID        string `msgpack:"id"`
 }
 
 func (p *Packet) Marshal() ([]byte, error) {
