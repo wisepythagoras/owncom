@@ -12,8 +12,8 @@ type Message struct {
 	Msg []byte
 }
 
-func (m *Message) PacketsAESGCM(key, salt []byte) ([]Packet, error) {
-	key, err := crypto.PBKDF2Key(key, salt)
+func (m *Message) PacketsAESGCM(aesGcmKey *crypto.AESGCMKey) ([]Packet, error) {
+	key, err := crypto.PBKDF2Key(aesGcmKey.Key, aesGcmKey.Salt)
 
 	if err != nil {
 		return nil, err

@@ -10,6 +10,10 @@ import (
 func bytesChecksum(bt []byte) uint16 {
 	var sum uint32 = 0
 
+	if len(bt)%2 == 1 {
+		bt = append(bt, 0)
+	}
+
 	for i := 0; i < len(bt); i += 2 {
 		sum += uint32(binary.BigEndian.Uint16(bt[i : i+2]))
 	}

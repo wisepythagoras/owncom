@@ -11,6 +11,11 @@ import (
 	"golang.org/x/crypto/sha3"
 )
 
+type AESGCMKey struct {
+	Key  []byte
+	Salt []byte
+}
+
 // CreateSalt will generate a random salt.
 func CreateSalt(size int) ([]byte, error) {
 	salt := make([]byte, size)

@@ -7,6 +7,7 @@ import (
 	"log"
 	"sync"
 
+	tea "github.com/charmbracelet/bubbletea"
 	"github.com/wisepythagoras/owncom/core"
 	"github.com/wisepythagoras/owncom/crypto"
 	"go.bug.st/serial"
@@ -46,30 +47,27 @@ func main() {
 		log.Fatalf("No such serial device: %q\n", *device)
 	}
 
+	// Encrypt message. Normally it would be called as follows:
+	// salt, _ := crypto.CreateSalt(32)
+	salt, _ := hex.DecodeString("4a707de3f5e271e1dba2a56434e959324dd7309bdb8333c0827cbfc7f0b3af2b")
+	aesGcmKey := crypto.AESGCMKey{
+		Key:  []byte("test key"),
+		Salt: salt,
+	}
+
 	msgChan := make(chan *core.Packet)
 	handler := core.Handler{WG: wg, MsgChan: msgChan}
+	program := tea.NewProgram(createModel(&handler, &aesGcmKey))
 
 	if err = handler.ConnectToSerial(*device); err != nil {
 		log.Fatal(err)
 	}
 
-	// Encrypt message. Normally it would be called as follows:
-	// salt, _ := crypto.CreateSalt(32)
-	salt, _ := hex.DecodeString("4a707de3f5e271e1dba2a56434e959324dd7309bdb8333c0827cbfc7f0b3af2b")
-	msg := core.Message{Msg: []byte("Test message")}
-	packets, err := msg.PacketsAESGCM([]byte("test key"), salt)
-
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	handler.Send(packets)
-
 	wg = new(sync.WaitGroup)
 	wg.Add(1)
 
 	go handler.Listen()
-	go func(msgChan chan *core.Packet) {
+	go func(msgChan chan *core.Packet, program *tea.Program) {
 		countMap := make(map[string]uint32)
 		packetMap := make(map[string][]*core.Packet)
 
@@ -111,10 +109,18 @@ func main() {
 					continue
 				}
 
-				fmt.Printf("%s (%d)> %s (%d packets)\n", p.ID, p.Checksum, string(plaintext), p.Total)
+				// fmt.Printf("%s (%d)> %s (%d packets)\n", p.ID, p.Checksum, string(plaintext), p.Total)
+				program.Send(UserMessage{
+					From:    "Someone: ",
+					Message: string(plaintext),
+				})
 			}
 		}
-	}(handler.MsgChan)
+	}(handler.MsgChan, program)
+
+	if _, err := program.Run(); err != nil {
+		log.Fatal(err)
+	}
 
 	wg.Wait()
 }
