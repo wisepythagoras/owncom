@@ -57,7 +57,7 @@ func main() {
 
 	msgChan := make(chan *core.Packet)
 	handler := core.Handler{WG: wg, MsgChan: msgChan}
-	program := tea.NewProgram(createModel(&handler, &aesGcmKey))
+	program := tea.NewProgram(createModel(&handler, &aesGcmKey), tea.WithAltScreen())
 
 	if err = handler.ConnectToSerial(*device); err != nil {
 		log.Fatal(err)

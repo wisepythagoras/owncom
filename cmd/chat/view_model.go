@@ -31,6 +31,7 @@ type ViewModel struct {
 	handler          *core.Handler
 	aesGcmKey        *crypto.AESGCMKey
 	err              error
+	screenWidth      int
 }
 
 func (m ViewModel) Init() tea.Cmd {
@@ -65,7 +66,9 @@ func (m ViewModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
-		m.viewport = viewport.New(msg.Width, msg.Height-8)
+		m.viewport = viewport.New(msg.Width, msg.Height-7)
+		m.messageInput.SetWidth(msg.Width)
+		m.screenWidth = msg.Width
 
 	case tea.KeyMsg:
 		switch msg.Type {
@@ -95,7 +98,10 @@ func (m ViewModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 	case UserMessage:
-		msg.LabelRenderer = m.otherUserStyle.Render
+		if msg.LabelRenderer == nil {
+			msg.LabelRenderer = m.otherUserStyle.Render
+		}
+
 		m.messages = append(m.messages, msg)
 		messageContent := make([]string, 0)
 
@@ -104,7 +110,7 @@ func (m ViewModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			messageContent = append(messageContent, someMessage)
 		}
 
-		m.viewport.SetContent(strings.Join(messageContent, "\n"))
+		m.viewport.SetContent(lipgloss.JoinHorizontal(lipgloss.Top, strings.Join(messageContent, "\n")))
 		m.messageInput.Reset()
 		m.viewport.GotoBottom()
 
@@ -119,7 +125,7 @@ func (m ViewModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (m ViewModel) View() string {
 	return fmt.Sprintf(
 		"%s\n\n%s",
-		m.viewport.View(),
+		viewportStyle(m.screenWidth).Render(m.viewport.View()),
 		m.messageInput.View(),
 	) + "\n\n"
 }
@@ -135,9 +141,7 @@ func createModel(handler *core.Handler, key any) ViewModel {
 	textArea.SetWidth(40)
 	textArea.SetHeight(3)
 
-	// Remove cursor line styling
 	textArea.FocusedStyle.CursorLine = lipgloss.NewStyle()
-
 	textArea.ShowLineNumbers = false
 
 	viewport := viewport.New(40, 10)
@@ -161,4 +165,15 @@ func createModel(handler *core.Handler, key any) ViewModel {
 		aesGcmKey:        aesGcmKey,
 		err:              nil,
 	}
+}
+
+func viewportStyle(width int) lipgloss.Style {
+	return lipgloss.NewStyle().
+		Align(lipgloss.Left).
+		BorderStyle(lipgloss.RoundedBorder()).
+		BorderBottom(true).
+		BorderLeft(false).
+		BorderRight(false).
+		BorderTop(false).
+		Width(width)
 }
