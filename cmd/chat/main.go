@@ -17,6 +17,7 @@ var wg *sync.WaitGroup
 
 func main() {
 	device := flag.String("device", "", "The serial device to open")
+	baudRate := flag.Int("baud-rate", 9600, "The baud rate")
 	flag.Parse()
 
 	if len(*device) == 0 {
@@ -59,7 +60,7 @@ func main() {
 	handler := core.Handler{WG: wg, MsgChan: msgChan}
 	program := tea.NewProgram(createModel(&handler, &aesGcmKey), tea.WithAltScreen())
 
-	if err = handler.ConnectToSerial(*device); err != nil {
+	if err = handler.ConnectToSerial(*device, *baudRate); err != nil {
 		log.Fatal(err)
 	}
 

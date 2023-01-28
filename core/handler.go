@@ -14,9 +14,9 @@ type Handler struct {
 	MsgChan chan *Packet
 }
 
-func (h *Handler) ConnectToSerial(device string) error {
+func (h *Handler) ConnectToSerial(device string, baudRate int) error {
 	mode := &serial.Mode{
-		BaudRate: 9600,
+		BaudRate: baudRate,
 	}
 	port, err := serial.Open(device, mode)
 
