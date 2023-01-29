@@ -13,6 +13,7 @@ type Handler struct {
 	WG      *sync.WaitGroup
 	MsgChan chan *Packet
 	Module  *Module
+	lockWg  *sync.WaitGroup
 }
 
 func (h *Handler) ConnectToSerial(device string, baudRate int) error {
@@ -46,42 +47,61 @@ func (h *Handler) Send(packets []Packet) error {
 		msgBytes := []byte(msgHex)
 		msgBytes = append(msgBytes, 0)
 
-		var wg *sync.WaitGroup
-
 		if h.Module != nil {
-			temp := h.Module.Marshal(msgBytes)
-			msgBytes = temp
+			if h.lockWg == nil {
+				h.lockWg = new(sync.WaitGroup)
+			}
 
-			wg = new(sync.WaitGroup)
-			wg.Add(1)
-
-			go h.getOne()
+			h.lockWg.Add(1)
 		}
 
 		numOfSegments := len(msgBytes) / 50
 		remainderBytes := len(msgBytes) % 50
 
 		for i := 0; i < numOfSegments; i++ {
-			if _, err = h.Port.Write(msgBytes[50*i : 50*(i+1)]); err != nil {
+			m := msgBytes[50*i : 50*(i+1)]
+
+			if h.Module != nil {
+				m = h.Module.Marshal(m)
+			}
+
+			if err = h.SendRaw(m); err != nil {
 				return err
+			}
+
+			if h.Module != nil {
+				m, err := h.GetOne()
+
+				if err != nil {
+					return err
+				} else if string(m) != "+OK" {
+					return fmt.Errorf("unknown error %q", string(m))
+				}
 			}
 		}
 
 		if remainderBytes > 0 {
-			if _, err = h.Port.Write(msgBytes[len(msgBytes)-remainderBytes:]); err != nil {
+			m := msgBytes[len(msgBytes)-remainderBytes:]
+
+			if h.Module != nil {
+				m = h.Module.Marshal(m)
+			}
+
+			if err = h.SendRaw(m); err != nil {
 				return err
 			}
 		}
 
 		if h.Module != nil {
-			wg.Wait()
+			h.lockWg.Done()
 		}
 	}
 
 	return nil
 }
 
-func (h *Handler) getOne() ([]byte, error) {
+// GetOne gets one full message from the device until it encounters "\r\n".
+func (h *Handler) GetOne() ([]byte, error) {
 	msg := make([]byte, 0)
 
 	for {
@@ -94,9 +114,8 @@ func (h *Handler) getOne() ([]byte, error) {
 
 		msg = append(msg, buff...)
 		l := len(msg)
-		fmt.Println(buff)
 
-		if l > 2 && msg[l-2] == 13 && msg[l-1] == 10 {
+		if l >= 2 && msg[l-2] == 13 && msg[l-1] == 10 {
 			break
 		}
 	}
@@ -107,8 +126,15 @@ func (h *Handler) getOne() ([]byte, error) {
 func (h *Handler) ListenRaw(onlyOne bool) {
 	defer h.WG.Done()
 
+	if h.lockWg == nil {
+		h.lockWg = new(sync.WaitGroup)
+	}
+
 	for {
-		msg, err := h.getOne()
+		// Wait in case something else is trying to read from the device.
+		h.lockWg.Wait()
+
+		msg, err := h.GetOne()
 
 		if err != nil {
 			fmt.Println(err)

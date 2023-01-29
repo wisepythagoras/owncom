@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"strings"
 	"sync"
 
 	"github.com/wisepythagoras/owncom/core"
@@ -48,18 +49,21 @@ func main() {
 		log.Fatalf("No such serial device: %q\n", *device)
 	}
 
-	wg = new(sync.WaitGroup)
-	wg.Add(1)
-
 	handler := core.Handler{WG: wg}
 
 	if err = handler.ConnectToSerial(*device, *baudRate); err != nil {
 		log.Fatal(err)
 	}
 
-	go handler.ListenRaw(true)
-
 	handler.SendRaw([]byte(*data + "\r\n"))
+	msg, err := handler.GetOne()
 
-	wg.Wait()
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	stringResp := string(msg)
+	stringResp = strings.Trim(stringResp, "\r\n")
+
+	fmt.Println(stringResp)
 }

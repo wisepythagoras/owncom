@@ -82,7 +82,14 @@ func main() {
 	wg = new(sync.WaitGroup)
 	wg.Add(1)
 
-	go handler.Listen()
+	if module != nil {
+		go handler.ListenRaw(false)
+	} else {
+		// The default behavior is to treat the serial device as if it accepts any data and it pipes
+		// it to the transmitter as-is.
+		go handler.Listen()
+	}
+
 	go func(msgChan chan *core.Packet, program *tea.Program) {
 		countMap := make(map[string]uint32)
 		packetMap := make(map[string][]*core.Packet)
