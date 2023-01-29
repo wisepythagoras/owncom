@@ -43,8 +43,7 @@ func (m ViewModel) broadCastMessage(userMsg UserMessage) {
 	var err error
 
 	msg := core.Message{
-		Msg:    []byte(userMsg.Message),
-		Module: m.handler.Module,
+		Msg: []byte(userMsg.Message),
 	}
 
 	if m.aesGcmKey != nil {

@@ -58,8 +58,19 @@ func (h *Handler) Send(packets []Packet) error {
 			go h.getOne()
 		}
 
-		if _, err = h.Port.Write(msgBytes); err != nil {
-			return err
+		numOfSegments := len(msgBytes) / 50
+		remainderBytes := len(msgBytes) % 50
+
+		for i := 0; i < numOfSegments; i++ {
+			if _, err = h.Port.Write(msgBytes[50*i : 50*(i+1)]); err != nil {
+				return err
+			}
+		}
+
+		if remainderBytes > 0 {
+			if _, err = h.Port.Write(msgBytes[len(msgBytes)-remainderBytes:]); err != nil {
+				return err
+			}
 		}
 
 		if h.Module != nil {
