@@ -53,30 +53,6 @@ func (h *Handler) Send(packets []Packet) error {
 	return nil
 }
 
-func (h *Handler) readBytes() ([]byte, int) {
-	msg := make([]byte, 0)
-	read := 0
-
-	for {
-		buff := make([]byte, 1)
-		n, err := h.Port.Read(buff)
-
-		if err != nil {
-			fmt.Println("Read Error:", err)
-			continue
-		}
-
-		if n == 0 || buff[0] == 0 {
-			break
-		}
-
-		msg = append(msg, buff...)
-		read += 1
-	}
-
-	return msg, read
-}
-
 func (h *Handler) ListenRaw() {
 	defer h.WG.Done()
 
