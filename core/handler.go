@@ -12,6 +12,7 @@ type Handler struct {
 	Port    serial.Port
 	WG      *sync.WaitGroup
 	MsgChan chan *Packet
+	Module  *Module
 }
 
 func (h *Handler) ConnectToSerial(device string, baudRate int) error {
@@ -45,27 +46,74 @@ func (h *Handler) Send(packets []Packet) error {
 		msgBytes := []byte(msgHex)
 		msgBytes = append(msgBytes, 0)
 
+		var wg *sync.WaitGroup
+
+		if h.Module != nil {
+			temp := h.Module.Marshal(msgBytes)
+			msgBytes = temp
+
+			wg = new(sync.WaitGroup)
+			wg.Add(1)
+
+			go h.getOne()
+		}
+
 		if _, err = h.Port.Write(msgBytes); err != nil {
 			return err
+		}
+
+		if h.Module != nil {
+			wg.Wait()
 		}
 	}
 
 	return nil
 }
 
-func (h *Handler) ListenRaw() {
-	defer h.WG.Done()
+func (h *Handler) getOne() ([]byte, error) {
+	msg := make([]byte, 0)
 
 	for {
 		buff := make([]byte, 1)
 		_, err := h.Port.Read(buff)
 
 		if err != nil {
-			fmt.Println("Read Error:", err)
+			return nil, err
+		}
+
+		msg = append(msg, buff...)
+		l := len(msg)
+		fmt.Println(buff)
+
+		if l > 2 && msg[l-2] == 13 && msg[l-1] == 10 {
+			break
+		}
+	}
+
+	return msg, nil
+}
+
+func (h *Handler) ListenRaw(onlyOne bool) {
+	defer h.WG.Done()
+
+	for {
+		msg, err := h.getOne()
+
+		if err != nil {
+			fmt.Println(err)
+
+			if onlyOne {
+				break
+			}
+
 			continue
 		}
 
-		fmt.Print(string(buff))
+		fmt.Println(string(msg))
+
+		if onlyOne {
+			break
+		}
 	}
 }
 

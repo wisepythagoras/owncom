@@ -18,6 +18,7 @@ var wg *sync.WaitGroup
 func main() {
 	device := flag.String("device", "", "The serial device to open")
 	baudRate := flag.Int("baud-rate", 9600, "The baud rate")
+	modulePath := flag.String("module", "", "Pass a module")
 	flag.Parse()
 
 	if len(*device) == 0 {
@@ -32,6 +33,16 @@ func main() {
 
 	if len(ports) == 0 {
 		log.Fatalln("No serial ports found")
+	}
+
+	var module *core.Module
+
+	if *modulePath != "" {
+		module, err = core.ReadModule(*modulePath)
+
+		if err != nil {
+			log.Fatalln(err)
+		}
 	}
 
 	found := false
@@ -57,7 +68,11 @@ func main() {
 	}
 
 	msgChan := make(chan *core.Packet)
-	handler := core.Handler{WG: wg, MsgChan: msgChan}
+	handler := core.Handler{
+		WG:      wg,
+		MsgChan: msgChan,
+		Module:  module,
+	}
 	program := tea.NewProgram(createModel(&handler, &aesGcmKey), tea.WithAltScreen())
 
 	if err = handler.ConnectToSerial(*device, *baudRate); err != nil {

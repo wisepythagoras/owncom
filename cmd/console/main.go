@@ -57,7 +57,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	go handler.ListenRaw()
+	go handler.ListenRaw(true)
 
 	handler.SendRaw([]byte(*data + "\r\n"))
 

@@ -42,7 +42,10 @@ func (m ViewModel) broadCastMessage(userMsg UserMessage) {
 	var packets []core.Packet
 	var err error
 
-	msg := core.Message{Msg: []byte(userMsg.Message)}
+	msg := core.Message{
+		Msg:    []byte(userMsg.Message),
+		Module: m.handler.Module,
+	}
 
 	if m.aesGcmKey != nil {
 		packets, err = msg.PacketsAESGCM(m.aesGcmKey)
