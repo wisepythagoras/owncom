@@ -68,9 +68,11 @@ func main() {
 	}
 
 	msgChan := make(chan *core.Packet)
+	outputChan := make(chan string)
 	handler := core.Handler{
 		WG:      wg,
 		MsgChan: msgChan,
+		OutChan: outputChan,
 		Module:  module,
 	}
 	program := tea.NewProgram(createModel(&handler, &aesGcmKey), tea.WithAltScreen())
@@ -89,6 +91,22 @@ func main() {
 		// it to the transmitter as-is.
 		go handler.Listen()
 	}
+
+	// go func(outChan chan string, program *tea.Program) {
+	// 	for {
+	// 		msg, ok := <-outChan
+
+	// 		if !ok {
+	// 			fmt.Println("Error reading from output chan")
+	// 			continue
+	// 		}
+
+	// 		program.Send(UserMessage{
+	// 			From:    "SYS: ",
+	// 			Message: msg,
+	// 		})
+	// 	}
+	// }(outputChan, program)
 
 	go func(msgChan chan *core.Packet, program *tea.Program) {
 		countMap := make(map[string]uint32)

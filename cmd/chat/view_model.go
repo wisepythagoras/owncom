@@ -53,7 +53,11 @@ func (m ViewModel) broadCastMessage(userMsg UserMessage) {
 			fmt.Println(err)
 		}
 
-		m.handler.Send(packets)
+		err = m.handler.Send(packets)
+
+		if err != nil {
+			fmt.Println(err)
+		}
 	}
 }
 

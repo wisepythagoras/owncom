@@ -12,6 +12,7 @@ type Handler struct {
 	Port    serial.Port
 	WG      *sync.WaitGroup
 	MsgChan chan *Packet
+	OutChan chan string
 	Module  *Module
 	lockWg  *sync.WaitGroup
 }
@@ -47,14 +48,6 @@ func (h *Handler) Send(packets []Packet) error {
 		msgBytes := []byte(msgHex)
 		msgBytes = append(msgBytes, 0)
 
-		if h.Module != nil {
-			if h.lockWg == nil {
-				h.lockWg = new(sync.WaitGroup)
-			}
-
-			h.lockWg.Add(1)
-		}
-
 		numOfSegments := len(msgBytes) / 50
 		remainderBytes := len(msgBytes) % 50
 
@@ -65,16 +58,18 @@ func (h *Handler) Send(packets []Packet) error {
 				m = h.Module.Marshal(m)
 			}
 
+			h.Port.Drain()
+
 			if err = h.SendRaw(m); err != nil {
 				return err
 			}
 
 			if h.Module != nil {
-				m, err := h.GetOne()
+				msg, ok := <-h.OutChan
 
-				if err != nil {
-					return err
-				} else if string(m) != "+OK" {
+				if !ok {
+					return fmt.Errorf("failed to read")
+				} else if msg != "+OK\r\n" {
 					return fmt.Errorf("unknown error %q", string(m))
 				}
 			}
@@ -87,13 +82,21 @@ func (h *Handler) Send(packets []Packet) error {
 				m = h.Module.Marshal(m)
 			}
 
+			h.Port.Drain()
+
 			if err = h.SendRaw(m); err != nil {
 				return err
 			}
-		}
 
-		if h.Module != nil {
-			h.lockWg.Done()
+			if h.Module != nil {
+				msg, ok := <-h.OutChan
+
+				if !ok {
+					return fmt.Errorf("failed to read")
+				} else if msg != "+OK\r\n" {
+					return fmt.Errorf("unknown error %q", string(m))
+				}
+			}
 		}
 	}
 
@@ -146,7 +149,7 @@ func (h *Handler) ListenRaw(onlyOne bool) {
 			continue
 		}
 
-		fmt.Println(string(msg))
+		h.OutChan <- string(msg)
 
 		if onlyOne {
 			break
